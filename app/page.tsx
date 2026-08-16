@@ -20,7 +20,7 @@ export default function Home() {
   const [videoUrl, setVideoUrl] = useState('');
   const [style, setStyle] = useState('Cyberpunk Anime');
 
-  // Chat Handler (Fixed Safe Fetch with Multilingual Support)
+  // Chat Handler (GET Request Logic - 100% Free & Unlimited)
   const handleSendMessage = async () => {
     if (!inputPrompt.trim() || isChatLoading) return;
 
@@ -30,38 +30,20 @@ export default function Home() {
     setIsChatLoading(true);
 
     try {
-      const response = await fetch('https://text.pollinations.ai/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [
-            { 
-              role: 'system', 
-              content: 'You are a smart AI assistant for HZ_PROGAMER Studio. You can understand and speak all languages fluently, including Malayalam, Manglish, English, etc.' 
-            },
-            { role: 'user', content: userText }
-          ],
-          seed: Math.floor(Math.random() * 100000)
-        }),
-      });
+      // Direct GET Fetch with seed to avoid caching
+      const seed = Math.floor(Math.random() * 100000);
+      const res = await fetch(`https://text.pollinations.ai/${encodeURIComponent(userText)}?seed=${seed}&system=You+are+a+multilingual+AI+assistant+that+can+reply+in+Malayalam+English+or+any+language`);
+      
+      const reply = await res.text();
 
-      // Status Error വന്നാൽ JSON പ്രിന്റ് ചെയ്യാതെ തടയുന്നു
-      if (!response.ok) {
-        throw new Error(`API Returned status: ${response.status}`);
-      }
-
-      const reply = await response.text();
-
-      if (reply && reply.trim().length > 0 && !reply.includes('"error"')) {
+      if (res.ok && reply && !reply.includes('"error"')) {
         setMessages((prev) => [...prev, { sender: 'ai', text: reply }]);
       } else {
-        setMessages((prev) => [...prev, { sender: 'ai', text: "Sorry, I couldn't process that request right now. Please try again!" }]);
+        setMessages((prev) => [...prev, { sender: 'ai', text: "Service temporary busy. Please try again in a few seconds!" }]);
       }
     } catch (err) {
-      console.error("Chat Error:", err);
-      setMessages((prev) => [...prev, { sender: 'ai', text: "AI Service busy. Please try again in a moment!" }]);
+      console.error(err);
+      setMessages((prev) => [...prev, { sender: 'ai', text: "Connection error. Please check your internet and try again!" }]);
     } finally {
       setIsChatLoading(false);
     }
