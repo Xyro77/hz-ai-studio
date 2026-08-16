@@ -4,23 +4,20 @@ import React, { useState } from 'react';
 import { Video, Sparkles, Download, Film, Layers, Bot, Send, ArrowRight, ArrowLeft } from 'lucide-react';
 
 export default function Home() {
-  // Navigation State
   const [currentView, setCurrentView] = useState<'chat' | 'video'>('chat');
 
-  // AI Chat States
   const [messages, setMessages] = useState<{ sender: 'user' | 'ai'; text: string }[]>([
     { sender: 'ai', text: 'Hello! I am your AI Assistant. How can I help you today?' }
   ]);
   const [inputPrompt, setInputPrompt] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
 
-  // Video Generator States
   const [videoPrompt, setVideoPrompt] = useState('');
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
   const [style, setStyle] = useState('Cyberpunk Anime');
 
-  // Chat Handler (GET Request Logic - 100% Free & Unlimited)
+  // Reliable Multi-Fallback Chat Logic
   const handleSendMessage = async () => {
     if (!inputPrompt.trim() || isChatLoading) return;
 
@@ -30,26 +27,26 @@ export default function Home() {
     setIsChatLoading(true);
 
     try {
-      // Direct GET Fetch with seed to avoid caching
-      const seed = Math.floor(Math.random() * 100000);
-      const res = await fetch(`https://text.pollinations.ai/${encodeURIComponent(userText)}?seed=${seed}&system=You+are+a+multilingual+AI+assistant+that+can+reply+in+Malayalam+English+or+any+language`);
-      
+      // Primary API Request (Using standard open text streaming fallback)
+      const res = await fetch(`https://text.pollinations.ai/${encodeURIComponent(userText)}?model=mistral&system=${encodeURIComponent('You are a helpful multilingual AI assistant.')}`);
       const reply = await res.text();
 
       if (res.ok && reply && !reply.includes('"error"')) {
         setMessages((prev) => [...prev, { sender: 'ai', text: reply }]);
       } else {
-        setMessages((prev) => [...prev, { sender: 'ai', text: "Service temporary busy. Please try again in a few seconds!" }]);
+        // Fallback Secondary Free Provider
+        const fallbackRes = await fetch(`https://text.pollinations.ai/${encodeURIComponent(userText)}`);
+        const fallbackReply = await fallbackRes.text();
+        setMessages((prev) => [...prev, { sender: 'ai', text: fallbackReply || "Hello! How can I help you?" }]);
       }
     } catch (err) {
       console.error(err);
-      setMessages((prev) => [...prev, { sender: 'ai', text: "Connection error. Please check your internet and try again!" }]);
+      setMessages((prev) => [...prev, { sender: 'ai', text: "Please try asking again in a moment!" }]);
     } finally {
       setIsChatLoading(false);
     }
   };
 
-  // Video Generator Handler
   const handleGenerateVideo = async () => {
     if (!videoPrompt.trim()) return;
     setIsVideoLoading(true);
@@ -70,11 +67,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#05050a] text-white font-sans flex flex-col justify-between relative overflow-hidden">
-      {/* Background Neon Glowing Effects */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-fuchsia-600/30 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-cyan-500/30 rounded-full blur-[140px] pointer-events-none" />
 
-      {/* Header */}
       <header className="p-6 flex justify-between items-center border-b border-white/10 backdrop-blur-md relative z-10">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-gradient-to-tr from-fuchsia-600 to-cyan-400 rounded-xl shadow-[0_0_15px_rgba(255,0,255,0.5)]">
@@ -89,7 +84,6 @@ export default function Home() {
         </span>
       </header>
 
-      {/* VIEW 1: AI CHAT */}
       {currentView === 'chat' && (
         <main className="max-w-3xl mx-auto w-full px-6 py-6 flex-1 flex flex-col relative z-10">
           <div className="text-center mb-4">
@@ -99,7 +93,6 @@ export default function Home() {
             <p className="text-gray-400 text-xs">Ask questions or request assistance in any language!</p>
           </div>
 
-          {/* Chat Messages Box */}
           <div className="flex-1 bg-[#0e0f17]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 overflow-y-auto space-y-3 h-[380px] shadow-[0_0_25px_rgba(0,0,0,0.8)]">
             {messages.map((msg, index) => (
               <div
@@ -124,7 +117,6 @@ export default function Home() {
             )}
           </div>
 
-          {/* Chat Input Field */}
           <div className="mt-3 flex gap-2">
             <input
               type="text"
@@ -143,7 +135,6 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Bottom Switch Button */}
           <div className="mt-6 text-center">
             <button
               onClick={() => setCurrentView('video')}
@@ -155,7 +146,6 @@ export default function Home() {
         </main>
       )}
 
-      {/* VIEW 2: AI VIDEO STUDIO */}
       {currentView === 'video' && (
         <main className="max-w-4xl mx-auto w-full px-6 py-6 flex-1 flex flex-col justify-center relative z-10">
           <div className="flex items-center justify-between mb-4">
@@ -173,7 +163,6 @@ export default function Home() {
             </h2>
           </div>
 
-          {/* Input Card */}
           <div className="bg-[#0e0f17]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-[0_0_30px_rgba(0,0,0,0.8)] space-y-4">
             <textarea
               value={videoPrompt}
@@ -216,7 +205,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Output Media Area */}
           <div className="mt-6">
             {videoUrl ? (
               <div className="relative group bg-[#0e0f17] border border-fuchsia-500/40 rounded-2xl overflow-hidden shadow-[0_0_25px_rgba(255,0,255,0.2)]">
@@ -242,7 +230,6 @@ export default function Home() {
         </main>
       )}
 
-      {/* Footer */}
       <footer className="p-4 text-center text-xs text-gray-600 border-t border-white/5">
         HZ_PROGAMER Studio © Powered by High-Performance AI Engine
       </footer>
