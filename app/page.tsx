@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Code2, Bot, Send, Sparkles, Play, Terminal, Layers } from "lucide-react";
 import Prism from "prismjs";
 import "prismjs/themes/prism-tomorrow.css";
@@ -10,7 +9,7 @@ import "prismjs/components/prism-typescript";
 import "prismjs/components/prism-python";
 import "prismjs/components/prism-css";
 import "prismjs/components/prism-json";
-import "prismjs/components/prism-markup"; // HTML
+import "prismjs/components/prism-markup";
 
 interface Message {
   sender: "user" | "ai";
@@ -34,7 +33,6 @@ export default function Home() {
   const [language, setLanguage] = useState<string>("javascript");
   const [output, setOutput] = useState<string>("");
 
-  // Auto detect code language based on simple syntax heuristics
   useEffect(() => {
     const trimmed = code.trim();
     if (trimmed.startsWith("<") || trimmed.includes("</div>") || trimmed.includes("<html>")) {
@@ -52,7 +50,6 @@ export default function Home() {
     }
   }, [code]);
 
-  // Trigger Prism syntax highlighting update
   useEffect(() => {
     Prism.highlightAll();
   }, [code, language]);
@@ -72,13 +69,37 @@ export default function Home() {
         throw new Error("API Key കണ്ടെത്തിയില്ല. Vercel-ൽ NEXT_PUBLIC_GEMINI_API_KEY ചേർത്തിട്ടുണ്ടോ എന്ന് ഉറപ്പുവരുത്തുക.");
       }
 
-      const genAI = new GoogleGenerativeAI(apiKey);
-      // Using supported current model version
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+      // Updated API Endpoint for Gemini 3.7 Flash
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: `You are HZ_PROGAMER AI Studio Assistant created by HZ_PROGAMER. Answer succinctly and helpfully.\nUser query: ${input}`,
+                  },
+                ],
+              },
+            ],
+          }),
+        }
+      );
 
-      const prompt = `You are HZ_PROGAMER AI Studio Assistant created by HZ_PROGAMER. Answer succinctly and helpfully.\nUser query: ${input}`;
-      const result = await model.generateContent(prompt);
-      const responseText = result.response.text() || "എനിക്ക് മറുപടി നൽകാൻ കഴിഞ്ഞില്ല. ദയവായി വീണ്ടും ശ്രമിക്കുക.";
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error?.message || "API റൂട്ടിംഗ് പരാജയപ്പെട്ടു.");
+      }
+
+      const responseText =
+        data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+        "എനിക്ക് മറുപടി നൽകാൻ കഴിഞ്ഞില്ല. ദയവായി വീണ്ടും ശ്രമിക്കുക.";
 
       const aiMessage: Message = {
         sender: "ai",
@@ -122,7 +143,6 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 font-sans">
-      {/* Left Panel: Code Editor with Syntax Highlighting */}
       <div className="w-1/2 border-r border-slate-800 flex flex-col">
         <div className="flex items-center justify-between p-4 bg-slate-900 border-b border-slate-800">
           <div className="flex items-center gap-2">
@@ -145,7 +165,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Code Input & Highlight Layer */}
         <div className="relative flex-1 bg-[#1d1f21] overflow-hidden font-mono text-sm">
           <textarea
             value={code}
@@ -159,7 +178,6 @@ export default function Home() {
           </pre>
         </div>
 
-        {/* Output Terminal */}
         <div className="h-1/3 border-t border-slate-800 bg-slate-900/50 flex flex-col">
           <div className="flex items-center gap-2 px-4 py-2 bg-slate-900 border-b border-slate-800 text-xs text-slate-400">
             <Terminal className="w-4 h-4 text-emerald-400" /> Output Terminal
@@ -170,7 +188,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Right Panel: AI Chat */}
       <div className="w-1/2 flex flex-col bg-slate-900/40">
         <div className="p-4 border-b border-slate-800 bg-slate-900 flex items-center gap-2">
           <Bot className="text-purple-400 w-5 h-5" />
