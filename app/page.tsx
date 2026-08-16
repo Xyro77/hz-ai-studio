@@ -20,7 +20,7 @@ export default function Home() {
   const [videoUrl, setVideoUrl] = useState('');
   const [style, setStyle] = useState('Cyberpunk Anime');
 
-  // Chat Handler (Fixed Direct Response Engine)
+  // Chat Handler (Fixed Safe Fetch with Multilingual Support)
   const handleSendMessage = async () => {
     if (!inputPrompt.trim() || isChatLoading) return;
 
@@ -30,17 +30,38 @@ export default function Home() {
     setIsChatLoading(true);
 
     try {
-      const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(userText)}?model=openai`);
+      const response = await fetch('https://text.pollinations.ai/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [
+            { 
+              role: 'system', 
+              content: 'You are a smart AI assistant for HZ_PROGAMER Studio. You can understand and speak all languages fluently, including Malayalam, Manglish, English, etc.' 
+            },
+            { role: 'user', content: userText }
+          ],
+          seed: Math.floor(Math.random() * 100000)
+        }),
+      });
+
+      // Status Error വന്നാൽ JSON പ്രിന്റ് ചെയ്യാതെ തടയുന്നു
+      if (!response.ok) {
+        throw new Error(`API Returned status: ${response.status}`);
+      }
+
       const reply = await response.text();
 
-      if (reply && reply.trim().length > 0) {
+      if (reply && reply.trim().length > 0 && !reply.includes('"error"')) {
         setMessages((prev) => [...prev, { sender: 'ai', text: reply }]);
       } else {
-        setMessages((prev) => [...prev, { sender: 'ai', text: "Could not generate a response. Please try again!" }]);
+        setMessages((prev) => [...prev, { sender: 'ai', text: "Sorry, I couldn't process that request right now. Please try again!" }]);
       }
     } catch (err) {
-      console.error(err);
-      setMessages((prev) => [...prev, { sender: 'ai', text: "Connection issue. Please try again!" }]);
+      console.error("Chat Error:", err);
+      setMessages((prev) => [...prev, { sender: 'ai', text: "AI Service busy. Please try again in a moment!" }]);
     } finally {
       setIsChatLoading(false);
     }
@@ -86,7 +107,7 @@ export default function Home() {
         </span>
       </header>
 
-      {/* VIEW 1: AI CHAT (FIRST PAGE) */}
+      {/* VIEW 1: AI CHAT */}
       {currentView === 'chat' && (
         <main className="max-w-3xl mx-auto w-full px-6 py-6 flex-1 flex flex-col relative z-10">
           <div className="text-center mb-4">
@@ -104,7 +125,7 @@ export default function Home() {
                 className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
               >
                 <div
-                  className={`p-3 rounded-xl text-xs leading-relaxed max-w-[85%] ${
+                  className={`p-3 rounded-xl text-xs leading-relaxed max-w-[85%] whitespace-pre-wrap ${
                     msg.sender === 'user'
                       ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-semibold shadow-[0_0_10px_rgba(0,255,255,0.3)]'
                       : 'bg-[#151724] text-gray-200 border border-white/10'
