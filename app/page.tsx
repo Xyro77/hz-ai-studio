@@ -20,7 +20,7 @@ export default function Home() {
   const [videoUrl, setVideoUrl] = useState('');
   const [style, setStyle] = useState('Cyberpunk Anime');
 
-  // Chat Handler (Updated Free OpenAI-Compatible Endpoint)
+  // Chat Handler (Fixed Direct Response Engine)
   const handleSendMessage = async () => {
     if (!inputPrompt.trim() || isChatLoading) return;
 
@@ -30,26 +30,17 @@ export default function Home() {
     setIsChatLoading(true);
 
     try {
-      const response = await fetch('https://text.pollinations.ai/openai', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: 'You are a helpful and smart AI assistant.' },
-            { role: 'user', content: userText }
-          ],
-          model: 'openai'
-        }),
-      });
+      const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(userText)}?model=openai`);
+      const reply = await response.text();
 
-      const data = await response.json();
-      const reply = data?.choices?.[0]?.message?.content || "I'm here to assist you!";
-      setMessages((prev) => [...prev, { sender: 'ai', text: reply }]);
+      if (reply && reply.trim().length > 0) {
+        setMessages((prev) => [...prev, { sender: 'ai', text: reply }]);
+      } else {
+        setMessages((prev) => [...prev, { sender: 'ai', text: "Could not generate a response. Please try again!" }]);
+      }
     } catch (err) {
       console.error(err);
-      setMessages((prev) => [...prev, { sender: 'ai', text: "Service temporarily busy. Please try again!" }]);
+      setMessages((prev) => [...prev, { sender: 'ai', text: "Connection issue. Please try again!" }]);
     } finally {
       setIsChatLoading(false);
     }
