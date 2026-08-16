@@ -73,8 +73,8 @@ export default function Home() {
       }
 
       const genAI = new GoogleGenerativeAI(apiKey);
-      // Active Gemini 2.0 Flash Model
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      // Using supported current model version
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
       const prompt = `You are HZ_PROGAMER AI Studio Assistant created by HZ_PROGAMER. Answer succinctly and helpfully.\nUser query: ${input}`;
       const result = await model.generateContent(prompt);
